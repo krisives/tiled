@@ -50,12 +50,6 @@ class Tile;
 
 struct TILEDSHARED_EXPORT TextData
 {
-    enum FontAttributes {
-        FontFamily  = 0x1,
-        FontSize    = 0x2,
-        FontStyle   = 0x8
-    };
-
     TextData();
 
     QString text;
@@ -210,6 +204,7 @@ public:
     const MapObject *templateObject() const;
 
     void syncWithTemplate();
+    void detachFromTemplate();
 
     bool isTemplateInstance() const;
 

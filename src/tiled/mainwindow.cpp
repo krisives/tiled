@@ -921,11 +921,10 @@ void MainWindow::export_()
 
 void MainWindow::exportAs()
 {
-    if (auto mapDocument = qobject_cast<MapDocument*>(mDocument)) {
+    if (auto mapDocument = qobject_cast<MapDocument*>(mDocument))
         exportMapAs(mapDocument);
-    } else if (auto tilesetDocument = qobject_cast<TilesetDocument*>(mDocument)) {
+    else if (auto tilesetDocument = qobject_cast<TilesetDocument*>(mDocument))
         exportTilesetAs(tilesetDocument);
-    }
 }
 
 void MainWindow::exportAsImage()
@@ -1540,14 +1539,75 @@ void MainWindow::exportMapAs(MapDocument *mapDocument)
                                                         mapDocument->lastExportFileName(),
                                                         selectedFilter,
                                                         this);
-    if (!exportDetails.isValid()) {
+    if (!exportDetails.isValid())
         return;
+
+    Map *map = mapDocument->map();
+    std::unique_ptr<Map> exportMap;
+
+    const auto options = Preferences::instance()->exportOptions();
+
+    if (options) {
+        // Make a copy to which export options are applied
+        exportMap.reset(new Map(*map));
+        map = exportMap.get();
+
+        if (options.testFlag(Preferences::EmbedTilesets)) {
+            auto tilesets = map->tilesets();
+            for (auto tileset : tilesets) {
+                if (tileset->isExternal()) {
+                    auto embeddedTileset = tileset->clone();
+                    embeddedTileset->setFileName(QString());
+                    map->replaceTileset(tileset, embeddedTileset);
+                }
+            }
+        }
+
+        if (options.testFlag(Preferences::DetachTemplateInstances)) {
+            for (Layer *layer : map->objectGroups())
+                for (MapObject *object : *static_cast<ObjectGroup*>(layer))
+                    if (object->isTemplateInstance())
+                        object->detachFromTemplate();
+        }
+
+        if (options.testFlag(Preferences::ResolveObjectTypesAndProperties)) {
+            for (Layer *layer : map->objectGroups()) {
+                for (MapObject *object : *static_cast<ObjectGroup*>(layer)) {
+                    Tile *tile = object->cell().tile();
+
+                    // Inherit type from tile if not set on object
+                    if (object->type().isEmpty() && tile &&
+                            (!object->isTemplateInstance() || object->propertyChanged(MapObject::CellProperty)))
+                        object->setType(tile->type());
+
+                    Properties properties;
+
+                    // Inherit properties from type
+                    if (!object->type().isEmpty()) {
+                        for (int i = Object::objectTypes().size() - 1; i >= 0; --i) {
+                            auto const &type = Object::objectTypes().at(i);
+                            if (type.name == object->type())
+                                properties.merge(type.defaultProperties);
+                        }
+                    }
+
+                    // Inherit properties from tile
+                    if (tile)
+                        properties.merge(tile->properties());
+
+                    // Override with own properties
+                    properties.merge(object->properties());
+
+                    object->setProperties(properties);
+                }
+            }
+        }
     }
 
     // Check if writer will overwrite existing files here because some writers
     // could save to multiple files at the same time. For example CSV saves
     // each layer into a separate file.
-    QStringList outputFiles = exportDetails.mFormat->outputFiles(mapDocument->map(), exportDetails.mFileName);
+    QStringList outputFiles = exportDetails.mFormat->outputFiles(map, exportDetails.mFileName);
     if (outputFiles.size() > 0) {
         // Check if any output file already exists
         QString message =
@@ -1582,7 +1642,7 @@ void MainWindow::exportMapAs(MapDocument *mapDocument)
     pref->setLastPath(Preferences::ExportedFile, QFileInfo(exportDetails.mFileName).path());
     mSettings.setValue(QLatin1String("lastUsedExportFilter"), selectedFilter);
 
-    auto exportResult = exportDetails.mFormat->write(mapDocument->map(), exportDetails.mFileName);
+    auto exportResult = exportDetails.mFormat->write(map, exportDetails.mFileName);
     if (!exportResult) {
         QMessageBox::critical(this, tr("Error Exporting Map!"),
                               exportDetails.mFormat->errorString());
