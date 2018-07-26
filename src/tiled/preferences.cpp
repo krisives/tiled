@@ -68,6 +68,12 @@ Preferences::Preferences()
     mObjectTypesFile = stringValue("ObjectTypesFile");
     mSettings->endGroup();
 
+    mSettings->beginGroup(QLatin1String("Export"));
+    setExportOption(EmbedTilesets, boolValue("EmbedTilesets", false));
+    setExportOption(DetachTemplateInstances, boolValue("DetachTemplateInstances", false));
+    setExportOption(ResolveObjectTypesAndProperties, boolValue("ResolveObjectTypesAndProperties", false));
+    mSettings->endGroup();
+
     SaveFile::setSafeSavingEnabled(mSafeSavingEnabled);
 
     // Retrieve interface settings
@@ -396,10 +402,26 @@ void Preferences::setSafeSavingEnabled(bool enabled)
 
 void Preferences::setExportOption(Preferences::ExportOption option, bool value)
 {
+#if QT_VERSION >= 0x050700
+    mExportOptions.setFlag(option, value);
+#else
     if (value)
         mExportOptions |= option;
     else
         mExportOptions &= ~option;
+#endif
+
+    switch (option) {
+    case EmbedTilesets:
+        mSettings->setValue(QLatin1String("Export/EmbedTilesets"), value);
+        break;
+    case DetachTemplateInstances:
+        mSettings->setValue(QLatin1String("Export/DetachTemplateInstances"), value);
+        break;
+    case ResolveObjectTypesAndProperties:
+        mSettings->setValue(QLatin1String("Export/ResolveObjectTypesAndProperties"), value);
+        break;
+    }
 }
 
 void Preferences::setLanguage(const QString &language)

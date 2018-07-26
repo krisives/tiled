@@ -435,11 +435,20 @@
   <tabstop>reloadTilesetImages</tabstop>
   <tabstop>openLastFiles</tabstop>
   <tabstop>safeSaving</tabstop>
+  <tabstop>embedTilesets</tabstop>
+  <tabstop>detachTemplateInstances</tabstop>
+  <tabstop>resolveObjectTypesAndProperties</tabstop>
+  <tabstop>languageCombo</tabstop>
+  <tabstop>gridColor</tabstop>
+  <tabstop>gridFine</tabstop>
+  <tabstop>objectLineWidth</tabstop>
+  <tabstop>openGL</tabstop>
+  <tabstop>wheelZoomsByDefault</tabstop>
   <tabstop>styleCombo</tabstop>
-  <tabstop>selectionColor</tabstop>
   <tabstop>baseColor</tabstop>
-  <tabstop>checkForUpdate</tabstop>
+  <tabstop>selectionColor</tabstop>
   <tabstop>autoUpdateCheckBox</tabstop>
+  <tabstop>checkForUpdate</tabstop>
   <tabstop>pluginList</tabstop>
  </tabstops>
  <resources/>
